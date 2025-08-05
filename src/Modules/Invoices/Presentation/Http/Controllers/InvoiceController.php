@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace Modules\Invoices\Presentation\Http\Controllers;
 
 use Illuminate\Routing\Controller;
-use Modules\Invoices\Domain\Exceptions\DomainRuleViolationException;
-use Modules\Invoices\Domain\Exceptions\NotFoundException;
+use Modules\Invoices\Application\DTO\CreateInvoiceDTO;
 use Modules\Invoices\Domain\Services\InvoiceService;
-use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Modules\Invoices\Presentation\Http\Requests\CreateInvoiceRequest;
+use Symfony\Component\HttpFoundation\Response;
 
 final class InvoiceController extends Controller
 {
@@ -17,44 +17,31 @@ final class InvoiceController extends Controller
 
     public function view(string $id): JsonResponse
     {
-        try {
-            $invoice = $this->invoiceService->viewInvoice($id);
-            return response()->json($invoice);
-        } catch (NotFoundException $e) {
-            throw new NotFoundException($e->getMessage());
-        }
+        $invoice = $this->invoiceService->viewInvoice($id);
+
+        return response()->json($invoice);
     }
 
-    public function create(Request $request): JsonResponse
+    public function create(CreateInvoiceRequest $request): JsonResponse
     {
-        $validated = $request->validate([
-            'customer_name' => 'required|string|max:255',
-            'customer_email' => 'required|email',
-            'product_lines' => 'required|array|min:1',
-            'product_lines.*.product_name' => 'required|string|max:255',
-            'product_lines.*.quantity' => 'required|integer|min:1',
-            'product_lines.*.unit_price' => 'required|integer|min:1',
-        ]);
+        $validated = $request->validated();
 
-        $invoice = $this->invoiceService->createInvoice(
-            $validated['customer_name'],
-            $validated['customer_email'],
-            $validated['product_lines'],
+        $dto = new CreateInvoiceDTO(
+            customerName: $validated['customer_name'],
+            customerEmail: $validated['customer_email'],
+            productLines: $validated['product_lines'],
         );
 
-        return response()->json($invoice, 201);
+        $invoice = $this->invoiceService->createInvoice($dto);
+
+        return response()->json($invoice, Response::HTTP_CREATED);
     }
 
     public function send(string $id): JsonResponse
     {
-        try {
-            $invoice = $this->invoiceService->sendInvoice($id);
-            return response()->json($invoice);
-        } catch (NotFoundException $e) {
-            throw new NotFoundException($e->getMessage());
-        } catch (DomainRuleViolationException $e) {
-            throw new DomainRuleViolationException($e->getMessage());
-        }
+        $invoice = $this->invoiceService->sendInvoice($id);
+
+        return response()->json($invoice);
     }
 
 }

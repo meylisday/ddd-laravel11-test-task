@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\Invoices\Domain\Services;
 
 use Illuminate\Support\Str;
+use Modules\Invoices\Application\DTO\CreateInvoiceDTO;
 use Modules\Invoices\Domain\Aggregates\InvoiceAggregate;
 use Modules\Invoices\Domain\Exceptions\NotFoundException;
 use Modules\Invoices\Domain\Repositories\InvoiceRepository;
@@ -16,11 +17,11 @@ use Modules\Notifications\Api\NotificationFacadeInterface;
 class InvoiceService
 {
     public function __construct(
-        private InvoiceRepository $repository,
-        private NotificationFacadeInterface $notificationFacade
+        private readonly InvoiceRepository  $repository,
+        private readonly NotificationFacadeInterface $notificationFacade
     ) {}
 
-    public function createInvoice(string $customerName, string $customerEmail, array $lines): array
+    public function createInvoice(CreateInvoiceDTO $dto): array
     {
         $invoiceId = new InvoiceId((string) Str::uuid());
 
@@ -28,13 +29,13 @@ class InvoiceService
             productName: $line['product_name'],
             quantity: $line['quantity'],
             unitPrice: $line['unit_price'],
-        ), $lines);
+        ), $dto->productLines);
 
         $aggregate = InvoiceAggregate::createDraft(
             id: $invoiceId,
-            customerName: $customerName,
-            customerEmail: $customerEmail,
-            productLines: $productLines,
+            customerName: $dto->customerName,
+            customerEmail: $dto->customerEmail,
+            productLines: $dto->productLines,
         );
 
         $invoiceModel = $aggregate->toModel();
@@ -58,6 +59,7 @@ class InvoiceService
     public function sendInvoice(string $invoiceId): array
     {
         $invoice = $this->repository->find($invoiceId);
+
         if (!$invoice) {
             throw new NotFoundException('Invoice not found');
         }
