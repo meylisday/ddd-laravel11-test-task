@@ -31,7 +31,6 @@ class ResourceDeliveredListener
 
         $aggregate = $aggregate->markAsSentToClient();
 
-        $updated = $aggregate->toModel($invoice);
-        $this->repository->save($updated);
+        $this->repository->saveAggregate($aggregate);
     }
 }

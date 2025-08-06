@@ -23,33 +23,18 @@ class InvoiceService
 
     public function createInvoice(CreateInvoiceDTO $dto): array
     {
-        $invoiceId = new InvoiceId((string) Str::uuid());
-
-        $productLines = array_map(fn($line) => new ProductLine(
-            productName: $line['product_name'],
-            quantity: $line['quantity'],
-            unitPrice: $line['unit_price'],
-        ), $dto->productLines);
-
         $aggregate = InvoiceAggregate::createDraft(
-            id: $invoiceId,
+            id: new InvoiceId((string) Str::uuid()),
             customerName: $dto->customerName,
             customerEmail: $dto->customerEmail,
-            productLines: $dto->productLines,
+            productLines: array_map(fn($line) => new ProductLine(
+                name: $line['name'],
+                quantity: $line['quantity'],
+                price: $line['price'],
+            ), $dto->productLines),
         );
 
-        $invoiceModel = $aggregate->toModel();
-        $this->repository->save($invoiceModel);
-
-        foreach ($productLines as $line) {
-            $invoiceModel->productLines()->create([
-                'product_name' => $line->productName(),
-                'quantity' => $line->quantity(),
-                'unit_price' => $line->unitPrice(),
-            ]);
-        }
-
-        $invoiceModel->refresh();
+        $invoiceModel = $this->repository->saveAggregate($aggregate);
 
         $aggregate = InvoiceAggregate::fromModel($invoiceModel);
 
@@ -73,8 +58,9 @@ class InvoiceService
 
         $aggregate = InvoiceAggregate::fromModel($invoice)->markAsSending();
 
-        $updatedModel = $aggregate->toModel($invoice);
-        $this->repository->save($updatedModel);
+        $updatedModel = $this->repository->saveAggregate($aggregate);
+
+        $aggregate = InvoiceAggregate::fromModel($updatedModel);
 
         return $this->toArray($aggregate);
     }
@@ -99,9 +85,9 @@ class InvoiceService
             'customer_name' => $aggregate->customerName(),
             'customer_email' => $aggregate->customerEmail(),
             'product_lines' => collect($aggregate->getProductLines())->map(fn($line) => [
-                'product_name' => $line->productName(),
+                'name' => $line->name(),
                 'quantity' => $line->quantity(),
-                'unit_price' => $line->unitPrice(),
+                'price' => $line->price(),
                 'total_unit_price' => $line->totalPrice(),
             ])->toArray(),
             'total_price' => $aggregate->totalPrice(),

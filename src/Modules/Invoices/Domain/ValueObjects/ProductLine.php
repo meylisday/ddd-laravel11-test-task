@@ -6,24 +6,24 @@ namespace Modules\Invoices\Domain\ValueObjects;
 
 final class ProductLine
 {
-    private string $productName;
+    private string $name;
     private int $quantity;
-    private int $unitPrice;
+    private int $price;
 
-    public function __construct(string $productName, int $quantity, int $unitPrice)
+    public function __construct(string $name, int $quantity, int $price)
     {
-        if ($quantity <= 0 || $unitPrice <= 0) {
+        if ($quantity <= 0 || $price <= 0) {
             throw new \InvalidArgumentException('Quantity and unit price must be positive integers.');
         }
 
-        $this->productName = $productName;
+        $this->name = $name;
         $this->quantity = $quantity;
-        $this->unitPrice = $unitPrice;
+        $this->price = $price;
     }
 
-    public function productName(): string
+    public function name(): string
     {
-        return $this->productName;
+        return $this->name;
     }
 
     public function quantity(): int
@@ -31,13 +31,13 @@ final class ProductLine
         return $this->quantity;
     }
 
-    public function unitPrice(): int
+    public function price(): int
     {
-        return $this->unitPrice;
+        return $this->price;
     }
 
     public function totalPrice(): int
     {
-        return $this->quantity * $this->unitPrice;
+        return $this->quantity * $this->price;
     }
 }

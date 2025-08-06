@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Invoices\Domain\Repositories;
 
+use Modules\Invoices\Domain\Aggregates\InvoiceAggregate;
 use Modules\Invoices\Domain\Models\Invoice;
 
 class InvoiceRepository implements InvoiceRepositoryInterface
@@ -13,13 +14,24 @@ class InvoiceRepository implements InvoiceRepositoryInterface
         return Invoice::with('productLines')->find($id);
     }
 
-    public function save(Invoice $invoice): void
+    public function saveAggregate(InvoiceAggregate $aggregate): Invoice
     {
-        $invoice->save();
-    }
+        $invoiceModel = $aggregate->toModel();
 
-    public function create(array $data): Invoice
-    {
-        return Invoice::create($data);
+        $invoiceModel->save();
+
+        $invoiceModel->productLines()->delete();
+
+        foreach ($aggregate->getProductLines() as $line) {
+            $invoiceModel->productLines()->create([
+                'name' => $line->productName(),
+                'quantity' => $line->quantity(),
+                'price' => $line->unitPrice(),
+            ]);
+        }
+
+        $invoiceModel->refresh();
+
+        return $invoiceModel;
     }
 }

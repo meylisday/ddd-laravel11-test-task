@@ -50,7 +50,7 @@ final class InvoiceAggregate
     {
         return !empty($this->productLines) &&
             collect($this->productLines)->every(function (ProductLine $line) {
-                return $line->quantity() > 0 && $line->unitPrice() > 0;
+                return $line->quantity() > 0 && $line->price() > 0;
             });
     }
 
@@ -78,11 +78,12 @@ final class InvoiceAggregate
     {
         $productLines = collect($invoiceModel->productLines)->map(function ($lineModel) {
             return new ProductLine(
-                productName: $lineModel->product_name,
+                name: $lineModel->name,
                 quantity: $lineModel->quantity,
-                unitPrice: $lineModel->unit_price,
+                price: $lineModel->price,
             );
         })->all();
+
 
         return new self(
             id: new InvoiceId($invoiceModel->id),
