@@ -53,3 +53,58 @@ The invoice should contain the following fields:
 
 * Start the project by running `./start.sh`.
 * To access the container environment, use: `docker compose exec app bash`.
+
+## Architecture & Design Decisions
+
+This project follows principles of Domain-Driven Design
+
+### Key decisions:
+
+- **Aggregates and Value Objects**  
+  The `InvoiceAggregate` encapsulates business rules and state changes for the Invoice domain. This protects invariants and provides a clear entry point for applying domain behavior.
+
+- **Eloquent as Persistence Layer, Not Entity**  
+  Eloquent models are used for persistence only. Domain logic is encapsulated in aggregates and value objects to keep the domain layer decoupled from the framework.
+
+- **Repository Pattern**  
+  The `InvoiceRepositoryInterface` abstracts data access, allowing the domain and application layers to remain infrastructure-agnostic.
+
+- **Events for Decoupling**  
+  Events like `ResourceDeliveredEvent` are used to trigger side effects asynchronously. This improves modularity and separates concerns (e.g., notifying clients, updating invoice status).
+
+- **NotificationFacade**  
+  A simple facade is used to abstract the actual notification logic, which could be implemented via emails, push notifications, etc., without coupling the service layer to a specific channel.
+
+- **DTOs for Data Transfer**  
+  DTOs like `CreateInvoiceDTO` help pass structured input data into services and prevent tight coupling with transport-specific representations (e.g., request classes).
+
+## Potential Improvements
+
+While the current design meets the core requirements, there are several areas that could be further enhanced:
+
+- **Introduce Domain Entities**  
+  Currently, Eloquent models are used primarily for persistence. Introducing explicit domain entities would help separate the business logic from the infrastructure layer and enforce invariants more clearly. For example, a proper `Invoice` entity could encapsulate behaviors like adding product lines, calculating totals, or determining if the invoice is payable.
+
+- **Authorization Layer**  
+  The current implementation does not include any authorization rules. Introducing an authorization policy (e.g., via Laravel's policies or custom application layer checks) would help control access to invoice-related actions.
+
+- **CQRS & Event Sourcing (optional)**  
+  Although currently not implemented, this architecture is a good fit for a Command Query Responsibility Segregation (CQRS) approach, especially given the clear use of aggregates and domain events. Event sourcing could also be introduced later for auditability and rebuilding domain state.
+
+- **Transactional Consistency**  
+  If multiple aggregates or models are ever modified in a single operation (e.g., invoice + related payments), wrapping service logic in an application-level transaction boundary would ensure consistency.
+
+- **Improve Test Coverage**  
+  While unit tests are present, integration or application layer tests could help verify behavior across modules (e.g., creation flow, event-triggered state transitions).
+
+- **Domain Errors and Result Objects**  
+  Instead of throwing exceptions directly or relying on null returns, a more expressive result-handling strategy could be adopted, such as a `Result` type (Success/Error), to improve predictability and control flow.
+
+- **Database Indexing**  
+  The current schema does not define any database indexes. Adding appropriate indexes (e.g., on `status`, `customer_email`, or foreign keys like `invoice_id` in related tables) would improve query performance, especially in large datasets.
+
+- **Audit Trail**  
+  Storing domain events or creating an audit log for invoice changes could help with compliance and traceability.
+
+- **API Documentation & Versioning**  
+  For a real-world service, consider adding OpenAPI/Swagger documentation and versioning endpoints to ensure forward compatibility.
