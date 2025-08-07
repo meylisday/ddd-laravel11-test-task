@@ -29,7 +29,7 @@ final class InvoiceController extends Controller
         $dto = new CreateInvoiceDTO(
             customerName: $validated['customer_name'],
             customerEmail: $validated['customer_email'],
-            productLines: $validated['product_lines'],
+            productLines: $validated['product_lines'] ?? [],
         );
 
         $invoice = $this->invoiceService->createInvoice($dto);

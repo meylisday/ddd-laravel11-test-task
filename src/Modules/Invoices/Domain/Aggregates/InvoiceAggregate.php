@@ -48,10 +48,13 @@ final class InvoiceAggregate
 
     public function hasValidProductLines(): bool
     {
-        return !empty($this->productLines) &&
-            collect($this->productLines)->every(function (ProductLine $line) {
-                return $line->quantity() > 0 && $line->price() > 0;
-            });
+        if (empty($this->productLines)) {
+            return true;
+        }
+
+        return collect($this->productLines)->every(function (ProductLine $line) {
+            return $line->quantity() > 0 && $line->price() > 0;
+        });
     }
 
     public function customerName(): string
@@ -111,7 +114,7 @@ final class InvoiceAggregate
             throw new DomainRuleViolationException('Invoice must be in draft status to be sent.');
         }
 
-        if (!$this->hasValidProductLines()) {
+        if (!empty($this->productLines) && !$this->hasValidProductLines()) {
             throw new DomainRuleViolationException(
                 'Invoice must have valid product lines (positive quantity and unit price).'
             );

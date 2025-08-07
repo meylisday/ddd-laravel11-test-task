@@ -23,15 +23,20 @@ class InvoiceService
 
     public function createInvoice(CreateInvoiceDTO $dto): array
     {
+        $productLines = array_map(
+            fn($line) => new ProductLine(
+                name: $line['name'],
+                quantity: $line['quantity'],
+                price: $line['price'],
+            ),
+            $dto->productLines ?? []
+        );
+
         $aggregate = InvoiceAggregate::createDraft(
             id: new InvoiceId((string) Str::uuid()),
             customerName: $dto->customerName,
             customerEmail: $dto->customerEmail,
-            productLines: array_map(fn($line) => new ProductLine(
-                name: $line['name'],
-                quantity: $line['quantity'],
-                price: $line['price'],
-            ), $dto->productLines),
+            productLines: $productLines,
         );
 
         $invoiceModel = $this->repository->saveAggregate($aggregate);

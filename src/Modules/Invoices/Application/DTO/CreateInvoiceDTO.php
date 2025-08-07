@@ -7,7 +7,7 @@ namespace Modules\Invoices\Application\DTO;
 final readonly class CreateInvoiceDTO
 {
     /**
-     * @param array<int, array{product_name: string, quantity: int, unit_price: int}> $productLines
+     * @param array<int, array{name: string, quantity: int, price: int}> $productLines
      */
     public function __construct(
         public string $customerName,

@@ -18,10 +18,10 @@ class CreateInvoiceRequest extends FormRequest
         return [
             'customer_name' => 'required|string|max:255',
             'customer_email' => 'required|email',
-            'product_lines' => 'required|array|min:1',
-            'product_lines.*.name' => 'required|string|max:255',
-            'product_lines.*.quantity' => 'required|integer|min:1',
-            'product_lines.*.price' => 'required|integer|min:1',
+            'product_lines' => 'nullable|array',
+            'product_lines.*.name' => 'required_with:product_lines|string|max:255',
+            'product_lines.*.quantity' => 'required_with:product_lines|integer|min:1',
+            'product_lines.*.price' => 'required_with:product_lines|integer|min:1',
         ];
     }
 }
